@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Universities' Details</title>
+    <style>
+        :root{
+            --LoginBackground:  #4286f4;
+            --BackupColor: #373B44;
+            --DefaultFontSize: clamp(20px,1.5vw,30px);
+            --DefaultFontFamily: Arial, Helvetica, sans-serif;
+            --DefaultFontWeight: bold;
+        }
+        body{
+            display: grid;
+            place-content: center center;
+            place-items: center center;
+            grid-template-columns: 100%;
+            grid-template-rows: 100%;
+            background-color: var(--LoginBackground);
+            background-repeat: round;
+            margin: 0;
+            height: 100dvh;
+            width: 100%;
+            font-size: var(--DefaultFontSize);
+            font-family: var(--DefaultFontFamily);
+            font-weight: var(--DefaultFontWeight);
+            color: white;
+            
+        }
+        legend{
+            text-align: center;
+            background-color: transparent;
+        }
+        div.Fill{
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            place-content: center center;
+            width: 100%;
+            place-self: center center;
+            
+        }
+        div.Fill input{
+            width: 95%;
+        }
+        div.Fill label{
+            width: 95%;
+            text-align: center;
+            place-self: center center;
+        }
+        fieldset{
+            display: grid;
+            place-content: center center;
+            place-items: center center;
+            width: 90%;
+            grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+            grid-template-columns: 100%;
+            height: 100%;
+        }
+        fieldset input[type = "submit"]{
+            width: 10%;
+            height: auto;
+            aspect-ratio: 16/9;
+            place-self: center center;
+            font-family: var(--DefaultFontFamily);
+            font-weight: var(--DefaultFontWeight);
+        }
+        form{
+            display: grid;
+            place-content: center center;
+            grid-template-rows: 100%;
+            grid-template-columns: 100%;
+            height: 35%;
+            width: auto;
+            aspect-ratio: 3/1;
+        }
+
+        
+    </style>
+
+    <script>
+        function ValidateForm(){
+            var UniversityName = document.getElementById("UniversityName").value;
+            var TuitionFees = document.getElementById("TuitionFees").value;
+            var CourseTitle = document.getElementById("CourseTitle").value;
+            var Error = document.getElementById("Error");
+            if(UniversityName == "" || TuitionFees == "" || CourseTitle == ""){
+                Error.innerHTML = "Please fill in all the fields";
+                return false;
+            }
+            return true;
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            let uniCreateForm = document.getElementById("create_university_form");
+
+            uniCreateForm.addEventListener("submit", function(event){
+                event.preventDefault();
+                if(ValidateForm()){
+                    var formData = new FormData(uniCreateForm);
+                    fetch('/api/universities/', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.id) {
+                            alert('University created successfully!');
+                            uniCreateForm.reset();
+                        } else {
+                            document.getElementById("Error").innerHTML = data;
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
+            });
+        });
+    </script>
+
+</head>
+<body>
+    {% include 'Assignment2/NavBar.html' %}
+    <form id="create_university_form" action="" method="post">
+        {% csrf_token %}
+        <fieldset>
+            <legend>Manage Univesities (Malaysia)</legend>
+            <div class="Fill">
+                <label for="UniversityName">University Name:</label>
+                <input type="text" name="UniversityName" id="UniversityName" required>
+            </div>
+            <div class="Fill">
+                <label for="State">State:</label>
+                <select name="State" id="State">
+                    <option value="Selangor">Selangor</option>
+                    <option value="Kuala Lumpur">Kuala Lumpur</option>
+                    <option value="Kedah">Kedah</option>
+                    <option value="Perak">Perak</option>
+                    <option value="Johor">Johor</option>
+                    <option value="Pahang">Pahang</option>
+                    <option value="Kelantan">Kelantan</option>
+                    <option value="Terengganu">Terengganu</option>
+                    <option value="Penang">Penang</option>
+                    <option value="Perlis">Perlis</option>
+                    <option value="Sabah">Sabah</option>
+                    <option value="Sarawak">Sarawak</option>
+                </select>
+            </div>
+            <div class="Fill">
+                <label for="TuitionFees">Tuition Fees:</label>
+                <input type="number" min="0" step="0.01" name="TuitionFees" id="TuitionFees" required>
+            </div>
+            <div class="Fill">
+                <label for="ProgramLvl">Program Level</label>
+                <select name="ProgramLvl" id="ProgramLvl">
+                    <option value="Professional Certificate">Professional Certificate</option>
+                    <option value="Diploma">Diploma</option>
+                    <option value="Bachelor">Bachelor</option>
+                    <option value="Master">Master</option>
+                    <option value="PHD">PHD</option>
+                </select>
+            </div>
+            <div class="Fill">
+                <label for="CourseTitle">Course Title:</label>
+                <input type="text" name="CourseTitle" id="CourseTitle" required>
+            </div>
+            <span id="Error">
+                {{error}}
+            </span>
+            <input type="submit" value="Create">
+        </fieldset>
+    </form>
+</body>
+</html>

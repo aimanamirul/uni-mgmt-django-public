@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Unversities' Details</title>
+    <style>
+        :root{
+            --LoginBackground:  #4286f4;
+            --BackupColor: #373B44;
+            --DefaultFontSize: clamp(20px,1.5vw,30px);
+            --DefaultFontFamily: Arial, Helvetica, sans-serif;
+            --DefaultFontWeight: bold;
+        }
+        body{
+            display: grid;
+            place-content: center center;
+            place-items: center center;
+            grid-template-columns: 100%;
+            grid-template-rows: 1fr 1fr 1fr;
+            background-color: var(--LoginBackground);
+            margin: 0;
+            height: 100dvh;
+            width: 100%;
+            font-size: var(--DefaultFontSize);
+            font-family: var(--DefaultFontFamily);
+            font-weight: var(--DefaultFontWeight);
+            color: white;
+        }
+        #formMain{
+            display: grid;
+            width: 100%;
+            position: fixed;
+            place-self: center center;
+        }
+        form{
+            width:40%;
+            place-self: center center;
+        }
+        fieldset legend{
+            text-align: center;
+        }
+        fieldset{
+            display: grid;
+            gap: 5px;
+        }
+        fieldset input[type = "submit"]{
+            height: auto;
+            aspect-ratio: 16/4;
+            place-self: center center;
+            font-family: var(--DefaultFontFamily);
+            font-weight: var(--DefaultFontWeight);
+        }
+        fieldset .Fill{
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+        }
+        fieldset:nth-child(2) .Fill{
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+        }
+        .Error{
+            visibility: hidden;
+            text-align: center;
+            color: red;
+        }
+        
+    </style>
+</head>
+<body>
+    <script>
+        function checkDeleteUniversityForm(){
+            let Success = true;
+            let UniversityName = document.getElementById("UniversityName").value;
+            let Error = document.getElementById("ErrorDeleteUniversity");
+            if(UniversityName === ""){
+                Success = False;
+                Error.innerText = "Error: Please fill in all the fields";
+                Error.style.color = "red";
+                Error.style.visibility = "visible";
+            }
+            return Success;
+        }
+        function checkDeleteCourseForm(){
+            let Success = true;
+            let CourseCode = document.getElementById("CourseCode").value;
+            let Error = document.getElementById("ErrorDeleteCourse");
+            if(CourseCode === ""){
+                Success = False;
+                Error.innerText = "Error: Please fill in all the fields";
+                Error.style.color = "red";
+                Error.style.visibility = "visible";
+            }
+            return Success;
+        }
+        function checkDeleteAssignedCourseForm(){
+            let Success = true;
+            let Course = document.getElementById("Course").value;
+            let UniversityID = document.getElementById("UniversityID").value;
+            let Error = document.getElementById("ErrorDeleteAssignedCourseUni");
+            if(Course === "" || UniversityID === ""){
+                Success = False;
+                Error.innerText = "Error: Please fill in all the fields";
+                Error.style.color = "red";
+                Error.style.visibility = "visible";
+            }
+            return Success;
+        }
+
+        function refreshUniversityList(){
+            let UniversityName = document.getElementById("UniversityName");
+            let UniversityID = document.getElementById("UniversityID");
+            fetch('/query/obtainUniversities/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        
+                        if(Array.isArray(data)){
+                            UniversityID.innerHTML = "";
+                            UniversityName.innerHTML = "";
+                            data.forEach(info=>{
+                                 UniversityName.innerHTML += "<option value=" + info.UniversityID +">" + info.UniversityName + " - " + info.State +"</option>"
+                                 UniversityID.innerHTML += "<option value=" + info.UniversityID +">" + info.UniversityName + " - " + info.State +"</option>"
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        
+                    });
+        }
+        function refreshCourseList(){
+            let CourseCode = document.getElementById("CourseCode");
+            let Course = document.getElementById("Course");
+            fetch('/query/obtainCourses/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        
+                        if(Array.isArray(data)){
+                            Course.innerHTML = "";
+                            CourseCode.innerHTML = "";
+                            data.forEach(info=>{
+                                 Course.innerHTML += "<option value=" + info.CourseCode +">" + info.CourseCode + " - " + info.CourseTitle +"</option>";
+                                 CourseCode.innerHTML += "<option value=" + info.CourseCode +">" + info.CourseCode + " - " + info.CourseTitle +"</option>";
+                            });
+                        }
+                        
+                       
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        
+                    });
+        }
+        
+        function FormDeleteUniversityCallback(ev){
+            ev.preventDefault();
+            if(!confirm("Delete University?")){
+                return;
+            }
+            if(!checkDeleteUniversityForm()){
+                return;
+            }
+            let form = ev.currentTarget;
+            let formData = new FormData(form);
+            let Status = document.getElementById("ErrorDeleteUniversity");
+            let UniversityID = document.getElementById("UniversityName").value;
+            fetch('/query/deleteUniversity/', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                })
+                .then(response => response.json())
+                .then(data=>{
+                    if(data.UniversityID !== parseInt(UniversityID)){
+                        Status.textContent = "Error: Unable to delete University:  " + UniversityID;
+                        Status.style.color - "red";
+                        Status.style.visibility = "visible";
+                        return;
+                    }
+                    Status.textContent = "University: " + data.UniversityID + " deleted Successfully!";
+                    Status.style.color = "green";
+                    refreshUniversityList(); /*Update University list*/
+                    Status.style.visibility = "visible";
+                    setTimeout(()=>{
+                            form.reset();
+                            Status.style.visibility = "hidden";
+                            },2000);
+                })
+                .catch(error=>{
+                    console.error('Error:', error);
+                    Status.textContent = "Error: Unable to delete University:  " + UniversityID;
+                    Status.style.color - "red";
+                    Status.style.visibility = "visible";
+                })
+            
+        }
+
+        function FormDeleteCourseCallback(ev){
+            ev.preventDefault();
+            if(!confirm("Delete Course?")){
+                return;
+            }
+            if(!checkDeleteCourseForm()){
+                return;
+            }
+            let form = ev.currentTarget;
+            let formData = new FormData(form);
+            let Status = document.getElementById("ErrorDeleteCourse");
+            let CourseCode = document.getElementById("CourseCode").value;
+            fetch('/query/deleteCourse/', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                })
+                .then(response => response.json())
+                .then(data=>{
+                    if(data.CourseCode !== CourseCode){
+                        Status.textContent = "Error: Unable to delete Course:  " + Course;
+                        Status.style.color - "red";
+                        Status.style.visibility = "visible";
+                        return;
+                    }
+                    Status.textContent = "Course: " + data.CourseCode + " deleted Successfully!";
+                    Status.style.color = "green";
+                    refreshCourseList(); /*Update University list*/
+                    Status.style.visibility = "visible";
+                    setTimeout(()=>{
+                            form.reset();
+                            Status.style.visibility = "hidden";
+                            },2000);
+                })
+                .catch(error=>{
+                    console.error('Error:', error);
+                    Status.textContent = "Error: Unable to delete Course:  " + CourseCode;
+                    Status.style.color - "red";
+                    Status.style.visibility = "visible";
+                })
+        }
+        function FormDeleteAssignedCourseUniversityCallback(ev){
+            ev.preventDefault();
+            if(!confirm("Delete Course Assigned to University?")){
+                return;
+            }
+            if(!checkDeleteAssignedCourseForm()){
+                return;
+            }
+            let form = ev.currentTarget;
+            let formData = new FormData(form);
+            let Status = document.getElementById("ErrorDeleteAssignedCourseUni");
+            let Course = document.getElementById("Course").value;
+            let UniversityID = document.getElementById("UniversityID").value;
+            fetch('/query/deleteCourseAssignedToUniversity/', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        }
+                })
+                .then(response => response.json())
+                .then(data=>{
+                    if(data.CourseCode !== Course){
+                        Status.textContent = "Error: Unable to delete Course: " + Course + " Assignment to University:  " + UniversityID;
+                        Status.style.color - "red";
+                        Status.style.visibility = "visible";
+                        return;
+                    }
+                    Status.textContent = "Course: " + data.CourseCode + " removed from University:" + data.UniversityID;
+                    Status.style.color = "green";
+                    refreshUniversityList(); /*Update University list*/
+                    Status.style.visibility = "visible";
+                    setTimeout(()=>{
+                            form.reset();
+                            Status.style.visibility = "hidden";
+                            },2000);
+                })
+                .catch(error=>{
+                    console.error('Error:', error);
+                    Status.textContent = "Unable to remove: " + Course + " from University:" + UniversityID;
+                    Status.style.color - "red";
+                    Status.style.visibility = "visible";
+                })
+        }
+        document.addEventListener("DOMContentLoaded", ()=>{
+            let FormDeleteUniversity = document.getElementById("Form-DeleteUniversity");
+            let FormDeleteCourse = document.getElementById("Form-DeleteCourse");
+            let FormDeleteAssignedCourseUniversity = document.getElementById("Form-DeleteAssignedCourseUniversity");
+
+            FormDeleteUniversity.addEventListener("submit",FormDeleteUniversityCallback);
+            FormDeleteCourse.addEventListener("submit",FormDeleteCourseCallback);
+            FormDeleteAssignedCourseUniversity.addEventListener("submit",FormDeleteAssignedCourseUniversityCallback);
+        });
+    </script>
+    {% include 'Assignment2/NavBar.html' %}
+     <div id="formMain">
+        <form action="" id="Form-DeleteUniversity" method="post">
+            {% csrf_token %}
+            <fieldset>
+                <legend>Delete University</legend>
+                <div class="Fill">
+                    <label for="UniversityName">University Name:</label>
+                    <select name="UniversityID" id="UniversityName">
+                        {% for university in Universities %}
+                            <option value="{{university.UniversityID}}">{{university.UniversityName}} -  {{university.State}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <span name="Error" class="Error" id="ErrorDeleteUniversity">Error: Please fill in all the fields</span>
+                <input type="submit" value="Delete University">
+            </fieldset>
+        </form>
+        <form action="" id="Form-DeleteCourse" method="post">
+            {% csrf_token %}
+            <fieldset>
+                <legend>Delete Course</legend>
+                <div class="Fill">
+                    <label for="CourseCode">Course:</label>
+                    <select name="CourseCode" id="CourseCode">
+                        {% for course in Courses %}
+                            <option value="{{course.CourseCode}}">{{course.CourseCode}} - {{course.CourseTitle}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <span name="Error" class="Error" id="ErrorDeleteCourse">Error: Please fill in all the fields</span>
+                <input type="submit" value="Delete Course">
+            </fieldset>
+        </form>
+        <form action="" id="Form-DeleteAssignedCourseUniversity" method="post">
+            {% csrf_token %}
+            <fieldset>
+                <legend>Delete Course assigned to University</legend>
+                <div class="Fill">
+                    <label for="UniversityID">University:</label>
+                    <select name="UniversityID" id="UniversityID">
+                        {% for university in Universities %}
+                            <option value="{{university.UniversityID}}">{{university.UniversityName}} -  {{university.State}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="Fill">
+                    <label for="CourseCode">Course:</label>
+                    <select name="CourseCode" id="Course">
+                        {% for course in Courses %}
+                            <option value="{{course.CourseCode}}">{{course.CourseCode}} - {{course.CourseTitle}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <span name="Error" class="Error" id="ErrorDeleteAssignedCourseUni">Error: Please fill in all the fields</span>
+                <input type="submit" value="Delete Assigned Course">
+            </fieldset>
+        </form>
+     </div>
+</body>
+</html>

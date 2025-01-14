@@ -1,0 +1,99 @@
+<script>
+
+</script>
+
+<style>
+	nav {
+		background-color: var(--BackupColor);
+		width: 100%;
+		padding: 1rem 0;
+		position: fixed;
+		top: 0;
+		display: flex;
+		justify-content: center;
+		gap: 2rem;
+		font-size: 14px;
+		z-index: 1000;
+		/* Added z-index */
+	}
+
+	.main-nav {
+		display: flex;
+		gap: 2rem;
+		margin: 0 2em 0 2em;
+	}
+
+	.user-interaction {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		margin: 0 2em 0 auto;
+	}
+</style>
+
+<nav>
+	<div class="main-nav">
+		<!-- <a href="{% url 'CreateInterface' %}" style="
+        color: white;
+        text-decoration: none;
+        &:hover { text-decoration: underline; }
+    ">Add</a> -->
+		<a href="{% url 'ViewInterface' %}" style="
+    color: white;
+    text-decoration: none;
+        &:hover { text-decoration: underline; }
+    ">View</a>
+
+	<!-- Render Add and Delete only if logged in -->
+	{% if request.session.admin_id %}
+	<a href="{% url 'CreateInterface' %}" style="
+		color: white;
+		text-decoration: none;
+		&:hover { text-decoration: underline; }
+	">Add</a>
+	<a href="{% url 'DeleteInterface' %}" style="
+		color: white;
+		text-decoration: none;
+		&:hover { text-decoration: underline; }
+	">Delete</a>
+	{% endif %}
+		<!--a href="{% url 'EditInterface' mode='university' id=0 %}" style="
+	color: white;
+	text-decoration: none;
+	&:hover {text-decoration: underline;}">Edit University</a-->
+		<!--a href="{% url 'EditInterface' mode='course' id=0 %}" style="
+	color: white;
+	text-decoration: none;
+	&:hover {text-decoration: underline;}">Edit Course</a-->
+		<!-- <a href="{% url 'DeleteInterface' %}" style="
+		color: white;
+		text-decoration: none;
+		&:hover {text-decoration: underline;}">Delete</a> -->
+	</div>
+	<div class="user-interaction">
+		{% if request.session.admin_id %}
+		{% with admin=admin %}
+		<span style="color: white;">Welcome,
+			{{ admin.Username }} <!-- This will display the Admin's Username -->
+		</span>
+		<a href="{% url 'logout' %}" style="
+					color: white;
+					text-decoration: none;
+					border: 1px solid white;
+					border-radius: 4px;
+					padding: 2px 4px;
+					&:hover { text-decoration: underline; }
+				">Logout</a>
+		{% endwith %}
+		{% else %}
+		<a href="{% url 'create_login' %}" style="
+					color: white;
+					text-decoration: none;
+					border: 1px solid white;
+					border-radius: 4px;
+					padding: 2px 4px;
+					&:hover { text-decoration: underline; }
+			">Login</a>
+		{% endif %}
+	</div>
+</nav>

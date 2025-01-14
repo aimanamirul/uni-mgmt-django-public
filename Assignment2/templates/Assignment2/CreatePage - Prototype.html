@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Page</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  {% load static %}
+  <link href="{% static 'css/main.css' %}" rel="stylesheet">
+  <style>
+    .form-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem; /* Reduced margin */
+    }
+
+    .form-group label {
+      margin-right: 0.5rem; /* Reduced margin */
+      min-width: 100px; /* Reduced min-width */
+      font-size: 16px; /* Reduced font size */
+    }
+
+    .form-group select,
+    .form-group input {
+      flex: 1;
+    }
+
+    .card {
+      margin-bottom: 0.5rem; /* Reduced margin */
+    }
+
+    .card-header h3 {
+      font-size: 20px; /* Reduced font size */
+    }
+
+    .card-body {
+      padding: 0.5rem; /* Reduced padding */
+    }
+
+    .mt-1 {
+      margin-top: 0.5rem; /* Reduced margin */
+    }
+    
+  </style>
+</head>
+
+<body>
+  <script>
+    function ValidateForm_CreateUniversity() {
+      let Success = true;
+      let UniversityName = document.getElementById("UniversityName").value;
+      let State = document.getElementById("State").value;
+      let Error = document.getElementById("ErrorAddUniversity");
+
+      if (UniversityName === "" || State === "") {
+        Success = false;
+        Error.innerText = "Error: Please fill in all the fields";
+        Error.style.color = "red";
+        Error.style.visibility = "visible";
+      }
+      return Success;
+    }
+
+    function ValidateForm_CreateCourse() {
+      let Success = true;
+      let CourseCode = document.getElementById("CourseCode").value;
+      let CourseTitle = document.getElementById("CourseTitle").value;
+      let TuitionFees = document.getElementById("TuitionFees").value;
+      let ProgramLvl = document.getElementById("ProgramLvl").value;
+      let Error = document.getElementById("ErrorAddCourse");
+
+      if (CourseCode === "" || CourseTitle === "" || TuitionFees === "" || ProgramLvl === "") {
+        Success = false;
+        Error.innerText = "Error: Please fill in all the fields";
+        Error.style.color = "red";
+        Error.style.visibility = "visible";
+      }
+      return Success;
+    }
+
+    function SelectRequestUniversities() {
+      /*Obtain new list of universities*/
+      let UniversityList = document.getElementById("UniversityID");
+      fetch('/query/obtainUniversities/', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+
+          if (Array.isArray(data.Universities)) {
+            UniversityList.innerHTML = ""
+            data.Universities.forEach(info => {
+              /**alert(info.CourseCode + ": " + info.CourseTitle);**/
+              UniversityList.innerHTML += "<option value=" + info.UniversityID + ">" + info.UniversityName + " - " + info.State + "</option>"
+            });
+          }
+
+
+        })
+        .catch(error => {
+          console.error('Error:', error);
+
+        });
+    }
+
+    function SelectRequestCourses() {
+      /*Obtain new list of courses*/
+      let Course = document.getElementById("Course");
+      fetch('/query/obtainCourses/', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+
+          if (Array.isArray(data)) {
+            Course.innerHTML = "";
+            data.forEach(info => {
+              /**alert(info.CourseCode + ": " + info.CourseTitle);**/
+              Course.innerHTML += "<option value=" + info.CourseCode + ">" + info.CourseCode + " - " + info.CourseTitle + "</option>"
+            });
+          }
+
+
+        })
+        .catch(error => {
+          console.error('Error:', error);
+
+        });
+    }
+
+    function ValidateForm_AssignCourseUni() {
+      let Success = true;
+      let UniversityID = document.getElementById("UniversityID").value;
+      let Course = document.getElementById("Course").value;
+      let Error = document.getElementById("ErrorAssignCourseUni");
+
+      if (UniversityID === "" || Course === "") {
+        Success = false;
+        Error.innerText = "Error: Please fill in all the fields";
+        Error.style.color = "red";
+        Error.style.visibility = "visible";
+      }
+      return Success;
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      let uniCreateForm = document.getElementById("Form-CreateUniversity");
+      let courseCreateForm = document.getElementById("Form-CreateCourse");
+      let courseAssignForm = document.getElementById("Form-AssignCourseUniversity");
+
+      /**
+       * Contains Insert request and Select request
+       */
+      uniCreateForm.addEventListener("submit", function(event) {
+        let Status = document.getElementById("ErrorAddUniversity"); //Yes, we're reusing error for status 
+        event.preventDefault();
+
+        if (ValidateForm_CreateUniversity()) {
+          var formData = new FormData(uniCreateForm);
+          let UniversityName = document.getElementById("UniversityName").value;
+          fetch('/query/createUniversity/', {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+              }
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.UniversityName !== undefined) {
+                //alert('University created successfully!');
+                Status.textContent = "University: " + data.UniversityName + " created Successfully!";
+                SelectRequestUniversities();
+                Status.style.color = "greenyellow";
+                Status.style.visibility = "visible";
+                setTimeout(() => {
+                  uniCreateForm.reset();
+                  Status.style.visibility = "hidden";
+                }, 2000);
+
+              } else {
+                Status.textContent = "Error: Unable to create University:  " + UniversityName;
+                Status.style.color = "red";
+                Status.style.visibility = "visible";
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              Status.textContent = "Error: Unable to create University:  " + UniversityName;
+              Status.style.color = "red";
+              Status.style.visibility = "visible";
+            });
+        }
+
+
+      });
+
+      courseCreateForm.addEventListener("submit", function(event) {
+        let Status = document.getElementById("ErrorAddCourse"); //Yes, we're reusing error for status 
+        event.preventDefault();
+
+        if (ValidateForm_CreateCourse()) {
+          var formData = new FormData(courseCreateForm);
+
+          let CourseCode = document.getElementById("CourseCode").value;
+          let CourseTitle = document.getElementById("CourseTitle").value;
+          let TuitionFees = document.getElementById("TuitionFees").value;
+          let ProgramLvl = document.getElementById("ProgramLvl").value;
+
+          fetch('/query/createCourse/', {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+              }
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.CourseCode !== undefined) {
+                //alert('University created successfully!');
+                Status.textContent = "Course: " + data.CourseCode + ": " + data.CourseTitle + " created Successfully!";
+                Status.style.color = "greenyellow";
+                Status.style.visibility = "visible";
+                SelectRequestCourses();
+                setTimeout(() => {
+                  courseCreateForm.reset();
+                  Status.style.visibility = "hidden";
+                }, 2000);
+
+              } else {
+                Status.textContent = "Error: " + data.Error.TuitionFees + "\n" + CourseCode + " - " + CourseTitle;
+                Status.style.color = "red";
+                Status.style.visibility = "visible";
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              Status.textContent = "Error: Unable to create Course:  " + CourseCode + " - " + CourseTitle;
+              Status.style.color = "red";
+              Status.style.visibility = "visible";
+            });
+        }
+
+      });
+      courseAssignForm.addEventListener("submit", function(event) {
+        let Status = document.getElementById("ErrorAssignCourseUni"); //Yes, we're reusing error for status 
+        event.preventDefault();
+
+        if (ValidateForm_AssignCourseUni()) {
+          var formData = new FormData(courseAssignForm);
+          let CourseCode = document.getElementById("Course").value;
+          let UniversityID = document.getElementById("UniversityID").value;
+          //alert(CourseCode)
+          //alert(UniversityID)
+          fetch('/query/assignCourse/', {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+              }
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.UniversityID !== undefined) {
+                //alert('University created successfully!');
+                Status.textContent = "University: " + UniversityID + ": " + "CourseCode: " + CourseCode + " assigned Successfully!";
+                Status.style.color = "greenyellow";
+                Status.style.visibility = "visible";
+                setTimeout(() => {
+                  courseAssignForm.reset();
+                  Status.style.visibility = "hidden";
+                }, 2000);
+
+              } else {
+                Status.textContent = "Error: Unable to assign University: " + UniversityID + ": " + "CourseCode: " + CourseCode;
+                Status.style.color = "red";
+                Status.style.visibility = "visible";
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              Status.textContent = "Error: Unable to assign University: " + UniversityID + ": " + "CourseCode: " + CourseCode;
+              Status.style.visibility = "visible";
+            });
+        }
+      });
+      let navbarHeight = document.querySelector('nav').offsetHeight;
+      document.querySelector('.container').style.marginTop = `calc(${navbarHeight}px + 2rem)`;
+    });
+  </script>
+  {% include 'Assignment2/NavBar.html' %}
+  <div class="container">
+    <div class="card form-card create-margin">
+      <div class="card-header">
+        <h3>Create University</h3>
+      </div>
+      <div class="card-body">
+        <form id="Form-CreateUniversity" method="post">
+          {% csrf_token %}
+          <fieldset>
+            <legend>Create University</legend>
+            <div class="form-group mb-3">
+              <label for="UniversityName" class="form-label">University Name:</label>
+              <input type="text" class="form-control" name="UniversityName" id="UniversityName" required>
+            </div>
+            <div class="form-group mb-3">
+              <label for="State" class="form-label">State:</label>
+              <select class="form-select" name="State" id="State">
+                <option value="Selangor">Selangor</option>
+                <option value="Kuala Lumpur">Kuala Lumpur</option>
+                <option value="Kedah">Kedah</option>
+                <option value="Perak">Perak</option>
+                <option value="Johor">Johor</option>
+                <option value="Pahang">Pahang</option>
+                <option value="Kelantan">Kelantan</option>
+                <option value="Terengganu">Terengganu</option>
+                <option value="Penang">Penang</option>
+                <option value="Perlis">Perlis</option>
+                <option value="Sabah">Sabah</option>
+                <option value="Sarawak">Sarawak</option>
+              </select>
+            </div>
+            <span name="Error" class="Error" id="ErrorAddUniversity" style="visibility: hidden;">Error: Please fill in all the fields</span>
+            <div class="mt-1">
+              <input type="submit" class="btn btn-success" value="Create University">
+            </div>
+          </fieldset>
+        </form>
+      </div>
+    </div>
+    <div class="card mt-1 form-card">
+      <div class="card-header">
+        <h3>Create Course</h3>
+      </div>
+      <div class="card-body">
+        <form id="Form-CreateCourse" method="post">
+          {% csrf_token %}
+          <fieldset>
+            <legend>Create Course</legend>
+            <div class="form-group mb-3">
+              <label for="CourseCode" class="form-label">Course Code:</label>
+              <input class="form-control" type="text" name="CourseCode" id="CourseCode" required>
+            </div>
+            <div class="form-group mb-3">
+              <label for="CourseTitle" class="form-label">Course Title:</label>
+              <input class="form-control" type="text" name="CourseTitle" id="CourseTitle" required>
+            </div>
+            <div class="form-group mb-3">
+              <label for="TuitionFees" class="form-label">Tuition Fees (MYR):</label>
+              <input type="number" class="form-control" min="0" step="0.01" name="TuitionFees" id="TuitionFees" required>
+            </div>
+            <div class="form-group mb-3">
+              <label for="ProgramLvl" class="form-label">Program Level:</label>
+              <select class="form-select" name="ProgramLvl" id="ProgramLvl">
+                <option value="Professional Certificate">Professional Certificate</option>
+                <option value="Diploma">Diploma</option>
+                <option value="Bachelor">Bachelor</option>
+                <option value="Master">Master</option>
+                <option value="PHD">PHD</option>
+              </select>
+            </div>
+            <span name="Error" class="Error" id="ErrorAddCourse" style="visibility: hidden;">Error: Please fill in all the fields</span>
+            <div class="mt-1">
+              <input type="submit" class="btn btn-success" value="Create Course">
+            </div>
+          </fieldset>
+        </form>
+      </div>
+    </div>
+    <div class="card mt-1 form-card">
+      <div class="card-header">
+        <h3>Assign Course to University</h3>
+      </div>
+      <div class="card-body">
+        <form id="Form-AssignCourseUniversity" method="post">
+          {% csrf_token %}
+          <fieldset>
+            <legend>Assign Course to University</legend>
+            <div class="form-group mb-3">
+              <label for="UniversityID" class="form-label">University:</label>
+              <select class="form-select" name="UniversityID" id="UniversityID">
+                {% for university in Universities %}
+                <option value="{{university.UniversityID}}">{{university.UniversityName}} - {{university.State}}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group mb-3">
+              <label for="CourseCode" class="form-label">Course:</label>
+              <select class="form-select" name="CourseCode" id="Course">
+                {% for course in Courses %}
+                <option value="{{course.CourseCode}}">{{course.CourseCode}} - {{course.CourseTitle}}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <span name="Error" class="Error" id="ErrorAssignCourseUni" style="visibility: hidden;">Error: Please fill in all the fields</span>
+            <div class="mt-1">
+              <input type="submit" class="btn btn-success" value="Assign Course">
+            </div>
+          </fieldset>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

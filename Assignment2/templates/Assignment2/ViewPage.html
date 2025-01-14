@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+		integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+		integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+		crossorigin="anonymous"></script>
+	<title>View Universities' Details</title>
+	{% load static %}
+	<link href="{% static 'css/main.css' %}" rel="stylesheet">
+
+	<script>
+		let uniList = [];
+		let courseList = [];
+
+		document.addEventListener('DOMContentLoaded', function () {
+			fetch('/query/universities/get/', {
+				method: 'GET'
+			})
+				.then(response => response.json())
+				.then(data => {
+					console.log(data);
+					loadUniSelectList(data);
+				})
+				.catch(error => console.error('Error fetching universities:', error));
+
+			document.getElementById('viewAllCoursesTab').addEventListener('click', showAllCourses);
+			document.getElementById('viewByUniversityTab').addEventListener('click', showCoursesByUniversity);
+			document.getElementById('viewAllUniversitiesTab').addEventListener('click', function () {
+				activateTab('viewAllUniversitiesTab', 'allUniversitiesContent');
+				fetchAllUniversities();
+			});
+
+			document.getElementById('searchCoursesInput').addEventListener('input', function () {
+				searchTable('AllCoursesTable', this.value);
+			});
+			document.getElementById('searchUniversitiesInput').addEventListener('input', function () {
+				searchTable('AllUniversitiesTable', this.value);
+			});
+			document.getElementById('searchCoursesByUniInput').addEventListener('input', function () {
+				searchTable('CoursesTable', this.value);
+			});
+		});
+
+		window.addEventListener('pageshow', function (event) {
+			if (event.persisted) {
+				// Refetch data when navigating back
+				if (document.getElementById('viewAllUniversitiesTab').classList.contains('active')) {
+					fetchAllUniversities();
+				} else if (document.getElementById('viewAllCoursesTab').classList.contains('active')) {
+					fetchAllCourses();
+				} else if (document.getElementById('viewByUniversityTab').classList.contains('active')) {
+					const uniSelectList = document.getElementById('UniversitySelectList');
+					if (uniSelectList.value !== '') {
+						fetch(`/query/universitycourse/get/${uniSelectList.value}/`, {
+							method: 'GET'
+						})
+							.then(response => response.json())
+							.then(data => {
+								console.log(data);
+								loadCoursesTable(data);
+							})
+							.catch(error => console.error('Error fetching courses:', error));
+					}
+				}
+			}
+		});
+
+		function activateTab(tabId, contentId) {
+			const tabs = document.querySelectorAll('.nav-link');
+			const contents = document.querySelectorAll('.tab-content');
+
+			tabs.forEach(tab => {
+				if (tab.id === tabId) {
+					tab.classList.add('active');
+				} else {
+					tab.classList.remove('active');
+				}
+			});
+
+			contents.forEach(content => {
+				if (content.id === contentId) {
+					content.classList.add('active');
+				} else {
+					content.classList.remove('active');
+				}
+			});
+		}
+
+		function loadUniSelectList(data) {
+			const oldElement = document.getElementById('UniversitySelectList');
+			const newElement = oldElement.cloneNode(true);
+			oldElement.parentNode.replaceChild(newElement, oldElement);
+			const uniSelectList = document.getElementById('UniversitySelectList');
+			uniSelectList.innerHTML = '';
+
+			// Add default option
+			const defaultOption = document.createElement('option');
+			defaultOption.value = '';
+			defaultOption.text = 'Select University';
+			uniSelectList.appendChild(defaultOption);
+
+			data.forEach(uni => {
+				const option = document.createElement('option');
+				option.value = uni.UniversityID;
+				option.text = uni.UniversityName;
+				uniSelectList.appendChild(option);
+			});
+
+			uniSelectList.addEventListener('change', handleUniSelectChange);
+		}
+
+		function handleUniSelectChange(e) {
+			const uniSelectList = document.getElementById('UniversitySelectList');
+			console.log(uniSelectList.value);
+
+			if (uniSelectList.value === '') {
+				document.getElementById('defaultMessage').style.display = 'block';
+				document.getElementById('CoursesTable').style.display = 'none';
+				return;
+			}
+
+			fetch(`/query/universitycourse/get/${uniSelectList.value}/`, {
+				method: 'GET'
+			})
+				.then(response => response.json())
+				.then(data => {
+					console.log(data);
+					loadCoursesTable(data);
+				})
+				.catch(error => console.error('Error fetching courses:', error));
+		}
+
+		function loadCoursesTable(data) {
+			const coursesTable = document.getElementById('CoursesTable').getElementsByTagName('tbody')[0];
+			coursesTable.innerHTML = '';
+			if (data.length === 0) {
+				const row = coursesTable.insertRow();
+				const cell = row.insertCell(0);
+				cell.colSpan = 4; // Updated colspan to 4
+				cell.textContent = 'No courses yet';
+				cell.style.textAlign = 'center';
+			} else {
+				data.forEach(course => {
+					const row = coursesTable.insertRow();
+					const cell1 = row.insertCell(0);
+					const cell2 = row.insertCell(1);
+					const cell3 = row.insertCell(2); // New cell for Program Level
+					const cell4 = row.insertCell(3); // New cell for Tuition Fee
+					cell1.textContent = course.CourseCode;
+					cell2.textContent = course.CourseTitle;
+					cell3.textContent = course.ProgramLvl; // Set Program Level
+					cell4.textContent = course.TuitionFees; // Set Tuition Fee
+				});
+			}
+			document.getElementById('defaultMessage').style.display = 'none';
+			document.getElementById('CoursesTable').style.display = 'table';
+			styleCells();
+		}
+
+		function styleCells() {
+			const cells = document.querySelectorAll('#CoursesTable td');
+			cells.forEach(cell => {
+				cell.style.padding = '10px';
+				cell.style.border = '1px solid #ddd';
+				cell.style.fontSize = '14px';
+			});
+		}
+
+		function showAllCourses() {
+			activateTab('viewAllCoursesTab', 'allCoursesContent');
+			fetchAllCourses();
+		}
+
+		function showCoursesByUniversity() {
+			activateTab('viewByUniversityTab', 'coursesByUniversityContent');
+		}
+
+		function fetchAllCourses() {
+			fetch('/query/courses/get/', {
+				method: 'GET'
+			})
+				.then(response => response.json())
+				.then(data => {
+					console.log('all courses ' + data);
+					loadAllCoursesTable(data);
+				})
+				.catch(error => console.error('Error fetching all courses:', error));
+		}
+
+		function loadAllCoursesTable(data) {
+			const allCoursesTable = document.getElementById('AllCoursesTable').getElementsByTagName('tbody')[0];
+			const courseActionsHeader = document.getElementById('allCoursesContentActionsHeader');
+			const isLoggedIn = {% if request.session.admin_id %} true {% else %} false {% endif %}; // Check if logged in
+			
+			allCoursesTable.innerHTML = '';
+			if (data.length === 0) {
+				const row = allCoursesTable.insertRow();
+				const cell = row.insertCell(0);
+				cell.colSpan = isLoggedIn ? 5:4; // Updated colspan to 5
+				cell.textContent = 'No courses available';
+				cell.style.textAlign = 'center';
+			} else {
+				data.forEach(course => {
+					const row = allCoursesTable.insertRow();
+					const cell1 = row.insertCell(0);
+					const cell2 = row.insertCell(1);
+					const cell3 = row.insertCell(2);
+					const cell4 = row.insertCell(3);
+					const cell5 = isLoggedIn ? row.insertCell(4) : null; // New cell for Edit button
+
+					cell1.textContent = course.CourseCode;
+					cell2.textContent = course.CourseTitle;
+					cell3.textContent = course.ProgramLvl;
+					cell4.textContent = course.TuitionFees;
+
+					if (isLoggedIn){
+						cell5.innerHTML = `<button class="btn btn-warning" onclick="editRedirect('course',${course.CourseID})">Edit</button>`;
+					} else {
+						courseActionsHeader.style.display = 'none';
+					}
+					// cell5.innerHTML = `<button class="btn btn-warning" onclick="editRedirect('course',${course.CourseID})">Edit</button>`;
+					// cell5.innerHTML = `{% if request.session.admin_id %}<button class="btn btn-warning" onclick="editRedirect('course',${course.CourseID})">Edit</button>{% endif %}`;
+
+					cell1.style.fontSize = '14px';
+					cell2.style.fontSize = '14px';
+					cell3.style.fontSize = '14px';
+					cell4.style.fontSize = '14px';
+					if (isLoggedIn) cell5.style.fontSize = '14px';
+				});
+			}
+			styleCells();
+		}
+
+		function showAllUniversities() {
+			document.getElementById('allUniversitiesContent').classList.add('active');
+			document.getElementById('coursesByUniversityContent').classList.remove('active');
+			document.getElementById('allCoursesContent').classList.remove('active');
+			fetchAllUniversities();
+		}
+
+		function fetchAllUniversities() {
+			fetch('/query/universities/get/', {
+				method: 'GET'
+			})
+				.then(response => response.json())
+				.then(data => {
+					console.log(data);
+					loadAllUniversitiesTable(data);
+				})
+				.catch(error => console.error('Error fetching all universities:', error));
+		}
+
+		function loadAllUniversitiesTable(data) {
+			const allUniversitiesTable = document.getElementById('AllUniversitiesTable').getElementsByTagName('tbody')[0];
+			const universitiesActionsHeader = document.getElementById('allUniversitiesContentActionsHeader');
+			const isLoggedIn = {% if request.session.admin_id %} true {% else %} false {% endif %}; // Check if logged in
+			
+			allUniversitiesTable.innerHTML = '';
+			if (data.length === 0) {
+				const row = allUniversitiesTable.insertRow();
+				const cell = row.insertCell(0);
+				cell.colSpan = isLoggedIn ? 3:2; // Updated colspan to 3
+				cell.textContent = 'No universities available';
+				cell.style.textAlign = 'center';
+			} else {
+				data.forEach(uni => {
+					const row = allUniversitiesTable.insertRow();
+					const cell1 = row.insertCell(0);
+					const cell2 = row.insertCell(1);
+					const cell3 = isLoggedIn ? row.insertCell(2) : null; // New cell for Edit button
+					
+					cell1.textContent = uni.UniversityName;
+					cell2.textContent = uni.State;
+
+					if (isLoggedIn){
+						cell3.innerHTML = `<button class="btn btn-warning" onclick="editRedirect('university',${uni.UniversityID})">Edit</button>`;
+					} else {
+						universitiesActionsHeader.style.display = 'none';
+					}
+					
+					// cell3.innerHTML = `<button class="btn btn-warning" onclick="editRedirect('university',${uni.UniversityID})">Edit</button>`;
+					// cell3.innerHTML = `{% if request.session.admin_id %}<button class="btn btn-warning" onclick="editRedirect('university',${uni.UniversityID})">Edit</button>{% endif %}`;
+
+					cell1.style.fontSize = '14px';
+					cell2.style.fontSize = '14px';
+					cell3.style.fontSize = '14px';
+				});
+			}
+		}
+
+		function editRedirect(mode, itemID) {
+			// Redirect to the edit page
+			window.location.href = `/edit/${mode}/${itemID}`;
+		}
+
+		function searchTable(tableId, searchTerm) {
+			const table = document.getElementById(tableId);
+			const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+			for (let i = 0; i < rows.length; i++) {
+				const cells = rows[i].getElementsByTagName('td');
+				let match = false;
+				for (let j = 0; j < cells.length; j++) {
+					if (cells[j].textContent.toLowerCase().includes(searchTerm.toLowerCase())) {
+						match = true;
+						break;
+					}
+				}
+				rows[i].style.display = match ? '' : 'none';
+			}
+		}
+	</script>
+</head>
+
+<body>
+	{% include 'Assignment2/NavBar.html' %}
+	<ul class="nav nav-tabs my-4">
+		<li class="nav-item">
+			<a class="nav-link" id="viewAllUniversitiesTab" href="#">View All Universities</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" id="viewAllCoursesTab" href="#">View All Courses</a>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link active" id="viewByUniversityTab" href="#">View Courses by University</a>
+		</li>
+	</ul>
+
+	<div id="coursesByUniversityContent" class="tab-content active">
+		<div id="uni_list_div" class="card w-50">
+			<div class="card-body">
+				<h5 class="card-title">Universities List</h5>
+				<select name="UniversitySelectList" id="UniversitySelectList" class="form-select">
+				</select>
+			</div>
+		</div>
+
+		<div id="uni_course_div">
+		</div>
+		<div id="uni_course_div" class="card w-50 mt-3">
+			<div class="card-body">
+				<h5 class="card-title">Courses List</h5>
+				<input type="text" id="searchCoursesByUniInput" class="form-control mb-3" placeholder="Search Courses">
+				<p id="defaultMessage">Please select a university to view Courses</p>
+				<table class="table table-striped" id="CoursesTable" style="display: none;">
+					<thead>
+						<tr>
+							<th scope="col">Course Code</th>
+							<th scope="col">Course Title</th>
+							<th scope="col">Program Level</th> <!-- New column header -->
+							<th scope="col">Tuition Fee (RM)</th> <!-- New column header -->
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	<div id="allCoursesContent" class="tab-content">
+		<div class="card w-50 mt-3">
+			<div class="card-body">
+				<h5 class="card-title">All Courses List</h5>
+				<input type="text" id="searchCoursesInput" class="form-control mb-3" placeholder="Search Courses">
+				<div class="table-container"> <!-- Updated container div -->
+					<table class="table table-striped" id="AllCoursesTable">
+						<thead>
+							<tr>
+								<th scope="col">Course Code</th>
+								<th scope="col">Course Title</th>
+								<th scope="col">Program Level</th>
+								<th scope="col">Tuition Fee (RM)</th>
+								<th scope="col" id="allCoursesContentActionsHeader">Actions</th> <!-- New column header for actions -->
+							</tr>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div> <!-- End of container div -->
+			</div>
+		</div>
+	</div>
+	<div id="allUniversitiesContent" class="tab-content">
+		<div class="card w-50 mt-3">
+			<div class="card-body">
+				<h5 class="card-title">All Universities List</h5>
+				<input type="text" id="searchUniversitiesInput" class="form-control mb-3"
+					placeholder="Search Universities">
+				<div class="table-container"> <!-- Updated container div -->
+					<table class="table table-striped" id="AllUniversitiesTable">
+						<thead>
+							<tr>
+								<th scope="col">University Name</th>
+								<th scope="col">University State</th>
+								<th scope="col" id="allUniversitiesContentActionsHeader">Actions</th> <!-- New column header for actions -->
+							</tr>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div> <!-- End of container div -->
+			</div>
+		</div>
+	</div>
+	<div class="d-flex justify-content-center my-4">
+		{% if request.session.admin_id %}
+		<a href="/delete" class="btn btn-warning">To Records Deletion Page</a>
+		{% endif %}
+	</div>
+</body>
+
+</html>

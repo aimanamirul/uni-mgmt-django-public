@@ -1,0 +1,118 @@
+:root {
+	--LoginBackground: #4286f4;
+	--BackupColor: #373B44;
+	--DefaultFontSize: clamp(12px, 1.5vw, 40px);
+	--DefaultFontFamily: Arial, Helvetica, sans-serif;
+	--DefaultFontWeight: bold;
+	--Success: greenyellow;
+}
+
+body {
+	background-color: var(--LoginBackground);
+	background-repeat: round;
+	margin: 0;
+	height: 100dvh;
+	width: 100%;
+	font-size: var(--DefaultFontSize);
+	font-family: var(--DefaultFontFamily);
+	font-weight: var(--DefaultFontWeight);
+	color: white;
+
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+.tab-content {
+	width: 100%;
+	display: none;
+}
+
+.tab-content.active {
+	display: block;
+}
+
+.card {
+	margin: 0 auto;
+	/* Center the card horizontally */
+}
+
+.nav-link {
+	background-color: var(--BackupColor);
+	font-size: 14px;
+	color: white;
+}
+
+.nav-link:hover {
+	background-color: #555;
+	color: var(--LoginBackground);
+}
+
+th {
+	font-size: 16px;
+}
+
+.table-container {
+	max-height: 300px;
+	/* Set the maximum height for table containers */
+	overflow-y: auto;
+	/* Enable vertical scrolling */
+}
+
+.form-card {
+	max-width: 50vw !important;
+	margin: auto;
+}
+
+.form-card h3,
+legend {
+	font-size: 18px;
+}
+
+.form-card p {
+	font-size: 14px;
+}
+
+.form-card span {
+	font-size: 14px;
+}
+
+.create-margin {
+	margin-top: 300px;
+	/* Default margin-top for smaller screens */
+}
+
+.center-text {
+	text-align: center;
+}
+
+@media (min-width: 768px) {
+	.create-margin {
+		margin-top: 350px;
+		/* Adjust for medium screens */
+	}
+}
+
+@media (min-width: 1024px) {
+	.create-margin {
+		margin-top: 300px;
+		/* Adjust for larger screens */
+	}
+}
+
+@media (min-width: 1600px) {
+	.create-margin {
+		margin-top: 200px;
+		/* Adjust for extra-large screens */
+		margin-bottom: 100px;
+	}
+}
+
+@media (min-width: 1920px) {
+	.create-margin {
+		margin-top: 120px;
+		/* Adjust for extra-large screens */
+		margin-bottom: 100px;
+	}
+}
