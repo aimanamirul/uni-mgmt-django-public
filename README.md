@@ -1,5 +1,8 @@
-**Setup instructions (for reference)**
+**Django CRUD Demo App**
 
+Initially built as a mini-project alongside group members, this serves as a public version of that original project.
+
+**Setup instructions**
 
 1. [CMD/Powershell] cd into project folder
 2. [CMD/Powershell] run the following commands
